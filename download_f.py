@@ -14,6 +14,11 @@ def download_from_file(path,m=False):
         comic=Comic(l)
         comic.download_all_chapters_s(m)
 if __name__=='__main__':
-    path=sys.argv[1]
-    m= True
+    path=(sys.argv[1] if len(sys.argv)>1 else './url.txt')
+    print('Download comics based on file {f}'.format(f=path))
+    m= (sys.argv[-1]=='1')
+    if m:
+        print('Using multi threads...')
+    else:
+        print('Using single thread...')
     download_from_file(path,m)
