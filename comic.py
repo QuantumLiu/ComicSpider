@@ -97,7 +97,6 @@ class Chapter():
         单线程下载本章节全部页
         Download all pages of the chapter not using multiprocessing
         '''
-        freeze_support()
         results=[]
         if not self.pages:
             print('No page')
@@ -115,7 +114,6 @@ class Chapter():
         if not self.pages:
             print('No page')
             return None
-        freeze_support()
         mp=Pool(min(8,max(cpu_count(),4)))
         for page in self.pages:
             results.append(mp.apply_async(self.download_page,(page,)))
@@ -219,7 +217,6 @@ class Comic():
         '''
         在章节层面多线程
         '''
-        freeze_support()
         mp=Pool(min(8,max(cpu_count(),4)))
         for key in self.chapters.keys():
             mp.apply_async(self.download_chapter,(key,False))
