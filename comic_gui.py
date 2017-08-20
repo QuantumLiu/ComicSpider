@@ -6,8 +6,6 @@ Created on Sat Aug 19 10:55:09 2017
 """
 
 from comic import *
-from io import BytesIO
-from PIL import Image
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 import sys
@@ -18,6 +16,9 @@ class Ui_Form(QtWidgets.QWidget):
         self.url=''
         self.dir=''
         self.show=True
+        self.loaded=False
+        self.comic=None
+        
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(480, 180)
@@ -51,6 +52,8 @@ class Ui_Form(QtWidgets.QWidget):
         self.edit_dir = QtWidgets.QLineEdit(Form)
         self.edit_dir.setObjectName("edit_dir")
         self.edit_url.textChanged.connect(self.edit_dir.clear)
+        self.edit_url.textChanged.connect(self.loaded_statu)
+        self.edit_dir.textChanged.connect(self.loaded_statu)
         self.gridLayout.addWidget(self.edit_dir, 1, 1, 1, 1)
         self.bt_select = QtWidgets.QPushButton(Form)
         self.bt_select.setObjectName("bt_select")
@@ -77,41 +80,28 @@ class Ui_Form(QtWidgets.QWidget):
     def select_dir(self):
         self.dir=QFileDialog.getExistingDirectory(self,'选择保存路径',(self.dirname if self.dirname else './'))
     
+    def loaded_statu(self):
+        self.loaded=False
+        
     def preview(self):
-        r_cover=r'src="(.*?)" id="cover_pic"/></a>'#封面url正则
-        r_title=r'<span class="anim_title_text"><a href=".*?"><h1>(.*?)</h1></a></span>'
         self.url=self.edit_url.text()
-        headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",'Referer':'http://manhua.dmzj.com/tags/s.shtml'}
         try:
-            text=requests.get(self.url,headers=headers).text
-        except ConnectionError:
+            self.comic=Comic(self.url)
+        except:
             traceback.print_exc()
             return False
-        result_cover=re.findall(r_cover,text)
-        if result_cover:
-            cover_url=result_cover[0]
-            if not (self.edit_dir.text()):
-                dirname=os.path.join(os.path.abspath('./'),validatetitle(re.findall(r_title,text)[0]))
-                self.edit_dir.setText(dirname)
-                self.dir=dirname
-            try:
-                if self.show:
-                    res=requests.get(cover_url,headers=headers)
-                    if b'403' in res.content:
-                        raise ValueError('Got cover img failed')
-                    out=BytesIO(res.content)
-                    out.seek(0)
-                    Image.open(out).show()
-                else:
-                    print('使用自动设置')
-            except (ConnectionError,ValueError):
-                traceback.print_exc()
-                return False
-            return True
+        self.loaded=True
+        title,des=self.comic.get_info()[:2]
+        if self.show:
+            self.comic.print_chapters(self.show)
         else:
-            self.url=''
-            print('不正确的漫画地址，请重新指定')
-            return False
+            print('使用自动设置')
+        print('漫画：{t}\n简介：{d}'.format(t=title,d=des))
+        if not (self.edit_dir.text()):
+            dirname=os.path.join(os.path.abspath('./'),validatetitle(title))
+            self.edit_dir.setText(dirname)
+            self.dir=dirname
+        return True
         
     def crawl(self):
         if not self.url:
@@ -121,14 +111,13 @@ class Ui_Form(QtWidgets.QWidget):
             self.show=False
             self.preview()
             self.show=True
-        comic_url=self.url
-        comic_title=None
-        comic_dir=self.dir
-        self.dir,self.url='',''
         self.parallel=(self.bt_parallel.isChecked() and cpu_count()>1)
         print(('使用多线程下载' if self.parallel else '使用单线程下载'))
-        comic=Comic(comic_url,comic_title,comic_dir)
-        comic.download_all_chapters_s(self.parallel)
+        if not self.loaded:
+            comic=Comic(self.url,None,self.dir)
+        self.dir,self.url='',''
+        self.comic.download_all_chapters_s(self.parallel)
+        
 if __name__ == "__main__":
     if sys.platform.startswith('win'):
         freeze_support()

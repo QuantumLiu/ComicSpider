@@ -7,6 +7,8 @@ Created on Sun Jul 23 11:03:51 2017
 
 import re,os,traceback
 import requests
+from io import BytesIO
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from multiprocessing import Pool,cpu_count,freeze_support
@@ -134,14 +136,14 @@ class Comic():
     '''
     def __init__(self,comic_url,comic_title=None,comic_dir=None):
         self.comic_url=comic_url
-        n_comic_title,self.des,self.cover,self.chapter_infos=self.get_info()
-        self.chapter_num=len(self.chapter_infos)
+        n_comic_title,self.des,self.cover,self.chapter_urls=self.get_info()
+        self.chapter_num=len(self.chapter_urls)
         self.comic_title=(comic_title if comic_title else n_comic_title)
         self.comic_dir=os.path.abspath((comic_dir if comic_dir else validatetitle(self.comic_title)))
         if not os.path.exists(self.comic_dir):
             os.mkdir(self.comic_dir)
         print('There are {n} chapters in comic {c}'.format(n=self.chapter_num,c=self.comic_title))
-        self.chapters={info[0]:Chapter(self.comic_title, self.comic_dir, *info) for info in self.chapter_infos}
+        self.chapters={info[0]:Chapter(self.comic_title, self.comic_dir, *info) for info in self.chapter_urls}
         self.pages=[]
         
     def get_info(self):
@@ -151,7 +153,7 @@ class Comic():
         return:
             comic title,description,cover url,chapters' urls
         '''
-        headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
+        headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",'Referer':'http://manhua.dmzj.com/tags/s.shtml'}
         root='http://manhua.dmzj.com'
         r_title=r'<span class="anim_title_text"><a href=".*?"><h1>(.*?)</h1></a></span>'
         r_des=r'<meta name=\'description\' content=".*?(介绍.*?)"/>'#简介正则
@@ -174,21 +176,32 @@ class Comic():
         '''
         更新漫画（未测试）
         '''
-        n_chapter_infos=self.get_info()
+        n_chapter_urls=self.get_info()
         num=0
-        for info in n_chapter_infos:
-            if not info in self.chapter_infos:
+        for info in n_chapter_urls:
+            if not info in self.chapter_urls:
                 num+=1
                 self.chapters[info[0]]=Chapter(self.comic_title, self.comic_dir, *info)
         if num:
-            self.chapter_infos=n_chapter_infos
-            print('Got {n} new chapters:\n{chs}'.format(n=num,chs='\n'.join([info[0] for info in self.chapter_infos])))
+            self.chapter_urls=n_chapter_urls
+            print('Got {n} new chapters:\n{chs}'.format(n=num,chs='\n'.join([info[0] for info in self.chapter_urls])))
         else:
             print('No new chapter found')
             
-    def print_chapters(self):
-        text='There are {n} chapters in comic {c}:\n{chs}'.format(n=self.chapter_num,c=self.comic_title,chs='\n'.join([info[0] for info in self.chapter_infos]))
+    def print_chapters(self,show=False):
+        headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",'Referer':'http://manhua.dmzj.com/tags/s.shtml'}
+        text='There are {n} chapters in comic {c}:\n{chs}'.format(n=self.chapter_num,c=self.comic_title,chs='\n'.join([info[0] for info in self.chapter_urls]))
         print(text)
+        if show:
+            try:
+                res=requests.get(self.cover,headers=headers)
+                if b'403' in res.content:
+                    raise ValueError('Got cover img failed')
+                out=BytesIO(res.content)
+                out.seek(0)
+                Image.open(out).show()
+            except (ConnectionError,ValueError):
+                traceback.print_exc()
         return text
 
     def download_chapter(self,key,p=True):
