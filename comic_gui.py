@@ -31,34 +31,40 @@ class Ui_Form(QtWidgets.QWidget):
         self.label_url.setAlignment(QtCore.Qt.AlignCenter)
         self.label_url.setObjectName("label_url")
         self.gridLayout.addWidget(self.label_url, 0, 0, 1, 1)
+        #输入url的文本框
         self.edit_url = QtWidgets.QLineEdit(Form)
         self.edit_url.setObjectName("edit_url")
         self.gridLayout.addWidget(self.edit_url, 0, 1, 1, 1)
+        #预览按键
         self.bt_preview = QtWidgets.QPushButton(Form)
         self.bt_preview.setAutoDefault(True)
         self.bt_preview.setDefault(False)
         self.bt_preview.setObjectName("bt_preview")
-        self.bt_preview.clicked.connect(self.preview)
+        self.bt_preview.clicked.connect(self.preview)#槽
         self.gridLayout.addWidget(self.bt_preview, 0, 2, 1, 1)
+        #启动爬取按键
         self.bt_crawl = QtWidgets.QPushButton(Form)
         self.bt_crawl.setDefault(True)
         self.bt_crawl.setObjectName("bt_crawl")
-        self.bt_crawl.clicked.connect(self.crawl)
+        self.bt_crawl.clicked.connect(self.crawl)#槽
         self.gridLayout.addWidget(self.bt_crawl, 0, 3, 1, 2)
         self.label_dir = QtWidgets.QLabel(Form)
         self.label_dir.setAlignment(QtCore.Qt.AlignCenter)
         self.label_dir.setObjectName("label_dir")
         self.gridLayout.addWidget(self.label_dir, 1, 0, 1, 1)
+        #选择目录的文本框
         self.edit_dir = QtWidgets.QLineEdit(Form)
         self.edit_dir.setObjectName("edit_dir")
-        self.edit_url.textChanged.connect(self.edit_dir.clear)
-        self.edit_url.textChanged.connect(self.loaded_statu)
-        self.edit_dir.textChanged.connect(self.loaded_statu)
+        self.edit_url.textChanged.connect(self.edit_dir.clear)#URL变化就清空目录
+        self.edit_url.textChanged.connect(self.loaded_statu)#预览加载状态
+        self.edit_dir.textChanged.connect(self.loaded_statu)#预览加载状态
         self.gridLayout.addWidget(self.edit_dir, 1, 1, 1, 1)
+        #选择目录按钮
         self.bt_select = QtWidgets.QPushButton(Form)
         self.bt_select.setObjectName("bt_select")
         self.bt_select.clicked.connect(self.select_dir)
         self.gridLayout.addWidget(self.bt_select, 1, 2, 1, 1)
+        #并行按钮
         self.bt_parallel = QtWidgets.QRadioButton(Form)
         self.bt_parallel.setChecked(False)
         self.bt_parallel.setObjectName("bt_parallel")
@@ -78,12 +84,21 @@ class Ui_Form(QtWidgets.QWidget):
         self.bt_parallel.setText(_translate("Form", "使用多线程"))
 
     def select_dir(self):
+        '''
+        弹出文件对话框选择保存目录
+        '''
         self.dir=QFileDialog.getExistingDirectory(self,'选择保存路径',(self.dirname if self.dirname else './'))
     
     def loaded_statu(self):
+        '''
+        更改预览状态
+        '''
         self.loaded=False
         
     def preview(self):
+        '''
+        预览
+        '''
         self.url=self.edit_url.text()
         try:
             self.comic=Comic(self.url)
@@ -104,6 +119,9 @@ class Ui_Form(QtWidgets.QWidget):
         return True
         
     def crawl(self):
+        '''
+        启动爬取
+        '''
         if not self.url:
             print('请指定漫画地址！')
             return
@@ -120,7 +138,7 @@ class Ui_Form(QtWidgets.QWidget):
         
 if __name__ == "__main__":
     if sys.platform.startswith('win'):
-        freeze_support()
+        freeze_support()#pyinstaller多线程
     app = QtWidgets.QApplication(sys.argv)
     Form = QtWidgets.QWidget()
     ui = Ui_Form()

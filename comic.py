@@ -189,6 +189,10 @@ class Comic():
             print('No new chapter found')
             
     def print_chapters(self,show=False):
+        '''
+        打印章节信息
+        Display infos of chapters.
+        '''
         headers={'use-agent':"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",'Referer':'http://manhua.dmzj.com/tags/s.shtml'}
         text='There are {n} chapters in comic {c}:\n{chs}'.format(n=self.chapter_num,c=self.comic_title,chs='\n'.join([info[0] for info in self.chapter_urls]))
         print(text)
