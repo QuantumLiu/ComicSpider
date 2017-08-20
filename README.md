@@ -106,6 +106,9 @@ Or using packaged binary program:
 Double click `comicspider_console.exe` to run with deafult arguments. 
 Or in cmd/shell/.bat:  
     comicspider_console \<your file\> \<multi-threads flag\>
+# Packaging打包  
+Require pyinstaller.  
+run `make.bat`
 # Future
 更多可指定参数  
 非阻塞显示图片  
